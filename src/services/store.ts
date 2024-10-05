@@ -1,5 +1,4 @@
 import { combineReducers, configureStore } from '@reduxjs/toolkit';
-
 import {
   TypedUseSelectorHook,
   useDispatch as dispatchHook,
@@ -12,7 +11,7 @@ import constructorSlice from './constructorSlice';
 import authSlice from './authSlice';
 
 // const rootReducer = () => {}; // Заменить на импорт настоящего редьюсера
-const rootReducer = combineReducers({
+export const rootReducer = combineReducers({
   ingredients: ingredientsReducer,
   orders: orderReducer,
   feeds: feedsReducer,
