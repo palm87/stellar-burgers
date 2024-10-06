@@ -1,13 +1,7 @@
-describe('проверяем доступность приложения', function() {
-  it('сервис должен быть доступен по адресу localhost:4000', function() {
-      cy.visit('http://localhost:4000'); 
-  });
-});
-
 
 describe('Сборка бургера', () => {
   const interceptEndpoints = () => {
-    cy.intercept('GET', '/api/ingredients', { fixture: 'ingredients.json' });
+    cy.intercept('GET', '/api/ingredients', { fixture: 'ingredients.json' }).as('ingredients');
     cy.intercept('GET', '/api/auth/user', { fixture: 'user.json' }).as('getUser');
     cy.intercept('POST', '/api/orders', { fixture: 'order.json' }).as('makeOrder');
   };
@@ -15,10 +9,18 @@ describe('Сборка бургера', () => {
   const setupUserSession = () => {
     cy.setCookie('accessToken', 'testToken');
     localStorage.setItem('refreshToken', 'testRefreshToken');
-  }
+  };
 
   const visitApp = () => {
     cy.visit('/');
+  };
+
+  const makeAliases = () => {
+    cy.get('[data-cy=BunAddButton]').as('bunAddBtn');
+    cy.get('[data-cy=IngredientAddButton]').as('ingredientAddBtn');
+    cy.get('[data-cy=ConstructorItemsIngredients]').as('constructorItems');
+    cy.get('[data-cy=SauceAddButton]').as('sauceAddBtn');
+
 
   };
 
@@ -26,6 +28,9 @@ describe('Сборка бургера', () => {
     interceptEndpoints();
     setupUserSession();
     visitApp();
+    cy.wait('@getUser');
+    cy.wait('@ingredients');  // Ждем загрузки данных ингредиентов
+    makeAliases();
   });
 
   afterEach(() => {
@@ -33,34 +38,35 @@ describe('Сборка бургера', () => {
     cy.clearCookies();
   });
 
-
-
   describe('Добавление ингредиентов в бургер', () => {
     it('Должен добавить булки в бургер', () => {
-      cy.get('[data-cy=BunAddButton]').contains('Добавить').click()
-      cy.get('[data-cy=TopBunInConstructor]').should('contain', 'Краторная булка N-200i');
-      cy.get('[data-cy=BottomBunInConstructor]').should('contain', 'Краторная булка N-200i');
+    
+      cy.get('@bunAddBtn').contains('Добавить').click();
+      cy.get('[data-cy=TopBunInConstructor]').as('topBun');
+      cy.get('@topBun').should('contain', 'Краторная булка N-200i');
+      cy.get('[data-cy=BottomBunInConstructor]', { timeout: 20000 }).as('bottomBun');
+      cy.get('@bottomBun').should('contain', 'Краторная булка N-200i');
     });
 
     it('Должен добавить начинку в бургер', () => {
-      cy.get('[data-cy=IngredientAddButton]').contains('Добавить').click()
-      cy.get('[data-cy=ConstructorItemsIngredients]').should('contain', 'Биокотлета из марсианской Магнолии');
+      cy.get('@ingredientAddBtn').contains('Добавить').click();
+      cy.get('@constructorItems').should('contain', 'Биокотлета из марсианской Магнолии');
     });
 
     it('Должен добавить соус в бургер', () => {
-      cy.get('[data-cy=SauceAddButton]').contains('Добавить').click()
-      cy.get('[data-cy=ConstructorItemsIngredients]').should('contain', 'Соус Spicy-X');
+      cy.get('@sauceAddBtn').contains('Добавить').click();
+      cy.get('@constructorItems').should('contain', 'Соус Spicy-X');
     });
   });
-
 
   describe('Модальные окна ингредиентов', () => {
     it('Должно открываться и закрываться модальное окно ингредиентов', () => {
       cy.contains('Краторная булка N-200i').click();
-      cy.get('[data-cy=Modal]').contains('Краторная булка N-200i').should('be.visible');
-      cy.get('[data-cy=CloseModalButton]').click().should('not.exist');
+      cy.get('[data-cy=Modal]').as('modal');
+      cy.get('[data-cy=CloseModalButton]').as('closeModalBtn');
+      cy.get('@modal').contains('Краторная булка N-200i').should('be.visible');
+      cy.get('@closeModalBtn').click().should('not.exist');
     });
-
   });
 
   describe('Создание заказа', () => {
@@ -69,19 +75,20 @@ describe('Сборка бургера', () => {
     });
 
     it('Должен успешно создать заказ', () => {
-      cy.get('[data-cy=BunAddButton]').contains('Добавить').click()
-      cy.get('[data-cy=IngredientAddButton]').contains('Добавить').click()
-      cy.get('[data-cy=SauceAddButton]').contains('Добавить').click()
+      cy.get('@bunAddBtn').contains('Добавить').click();
+      cy.get('@ingredientAddBtn').contains('Добавить').click();
+      cy.get('@sauceAddBtn').contains('Добавить').click();
       cy.get('[type=button]').contains('Оформить заказ').click();
       cy.wait('@makeOrder', { timeout: 1000 })
         .its('response.statusCode')
         .should('eq', 200);
+      cy.get('[data-cy=Modal]').as('modal');
 
-      cy.get('[data-cy=Modal]').should('be.visible');
-      cy.get('[data-cy=Modal]').find('button').click().should('not.exist');
+      cy.get('@modal').should('be.visible');
+      cy.get('@modal').find('button').click().should('not.exist');
 
-      cy.get('[data-cy=ConstructorItemsIngredients]')
-        .should('contain', 'Выберите начинку')
+      cy.get('@constructorItems')
+        .should('contain', 'Выберите начинку');
     });
   });
 });
