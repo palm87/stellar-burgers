@@ -13,7 +13,7 @@ import {
 } from '@api';
 import { deleteCookie, getCookie, setCookie } from '../utils/cookie';
 
-type TAuthState = {
+export type TAuthState = {
   user: TUser | null;
   isAuthChecked: boolean;
   isAuthenticated: boolean;
@@ -115,6 +115,9 @@ export const authSlice = createSlice({
   initialState,
   reducers: {
     setAuthChecked: (state, action: PayloadAction<boolean>) => {
+      state.isAuthChecked = action.payload;
+    },
+    setAuthenticated: (state, action: PayloadAction<boolean>) => {
       state.isAuthenticated = action.payload;
     },
     setUser: (state, action: PayloadAction<TUser | null>) => {

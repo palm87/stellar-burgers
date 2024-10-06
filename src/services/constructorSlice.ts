@@ -16,7 +16,7 @@ const initialState: IConstructorState = {
   ingredients: []
 };
 
-const constructorSlice = createSlice({
+export const constructorSlice = createSlice({
   name: 'burger',
   initialState,
   reducers: {
@@ -40,21 +40,22 @@ const constructorSlice = createSlice({
         (ingredient) => ingredient.id !== action.payload
       );
     },
-    //   moveIngredient: (state, action: PayloadAction<{ingredient: TIngredient, direction: string}>) => {
-    //     const { ingredient, direction } = action.payload;
-    //     const indexOfIngredient = state.ingredients.indexOf(action.payload.ingredient);
-    //     if (direction === 'up' && indexOfIngredient === 0) {
-    //       return state;
-    //     }
-    //     if (direction === 'down' && indexOfIngredient === state.ingredients.length - 1) {
-    //       return state;
-    //     }
-    //     const swapIndex = direction === 'up' ? indexOfIngredient- 1 : indexOfIngredient + 1;
+    moveIngredient: (
+      state,
+      action: PayloadAction<{ index: number; direction: 'up' | 'down' }>
+    ) => {
+      const { index, direction } = action.payload;
+      const step = direction === 'up' ? -1 : 1; // Определяем шаг в зависимости от направления
+      const targetIndex = index + step;
 
-    //   [state.ingredients[indexOfIngredient], state.ingredients[swapIndex]] = [state.ingredients[swapIndex], state.ingredients[indexOfIngredient]];
+      if (targetIndex >= 0 && targetIndex < state.ingredients.length) {
+        // Меняем местами ингредиенты
+        const temp = state.ingredients[index];
+        state.ingredients[index] = state.ingredients[targetIndex];
+        state.ingredients[targetIndex] = temp;
+      }
+    },
 
-    // return state;
-    //   },
     clearIngredients: (state) => (state = initialState)
   },
   selectors: {
@@ -73,7 +74,11 @@ const constructorSlice = createSlice({
 
 export const { getBurger, getIngredients, getAllIngredients } =
   constructorSlice.selectors;
-export const { addIngredient, removeIngredient, clearIngredients } =
-  constructorSlice.actions;
+export const {
+  addIngredient,
+  removeIngredient,
+  clearIngredients,
+  moveIngredient
+} = constructorSlice.actions;
 
 export default constructorSlice.reducer;
